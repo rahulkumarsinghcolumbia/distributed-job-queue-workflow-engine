@@ -4,6 +4,25 @@
 
 Provide a reliable asynchronous processing backend where multiple workers can process jobs concurrently without duplicate ownership and with operational recovery support.
 
+## Example Flow (Job Creation to Processing)
+
+Use case: signup event triggers welcome email job.
+
+1. API client enqueues job with queue name `email` and payload.
+2. System saves job as `QUEUED` and marks it visible immediately.
+3. Worker polls `/lease` and receives job with `leaseToken` and `leasedUntil`.
+4. Worker executes business logic.
+5. Success path: worker calls `/ack`, job becomes `SUCCEEDED`.
+6. Failure path: worker calls `/fail`; job is retried or moved to `DEAD_LETTER` when attempts are exhausted.
+7. Operations path: team checks DLQ and can requeue dead-lettered jobs.
+
+## Example Concurrency Scenario
+
+1. Worker A and Worker B call `/lease` at the same time.
+2. Query uses `FOR UPDATE SKIP LOCKED`, so only one worker locks a specific row.
+3. Worker A gets Job-101; Worker B cannot lease Job-101 at that moment.
+4. If Worker A crashes and lease expires, Job-101 is visible again and can be leased by Worker B (or another worker).
+
 ## Concept -> Implementation
 
 1. Worker leasing

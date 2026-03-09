@@ -13,6 +13,34 @@ This service accepts background jobs and allows workers to process them safely a
 - Jobs that exceed retry limits move to a dead-letter queue (DLQ)
 - Operators can inspect and requeue DLQ jobs
 
+## End-to-End Flow Example (How It Works)
+
+Example use case: send a welcome email after user signup.
+
+1. Producer creates a job with `POST /api/v1/jobs/enqueue`.
+Job is stored with `status=QUEUED`, `attemptCount=0`, `visibleAt=now`. If the same `idempotencyKey` is sent again, system returns existing job instead of creating a duplicate.
+
+2. Worker polls with `POST /api/v1/jobs/lease`.
+Database selects one available job using `FOR UPDATE SKIP LOCKED`. Job changes to `status=LEASED` and system sets `leaseToken` with `leasedUntil = now + visibilityTimeout`.
+
+3. Worker processes payload.
+If success, worker calls `POST /api/v1/jobs/{jobId}/ack` with lease token and job changes to `status=SUCCEEDED`.
+
+4. If processing fails:
+Worker calls `POST /api/v1/jobs/{jobId}/fail`. If attempts remain, job returns to `status=QUEUED` (with optional retry delay). If attempts are exhausted, job moves to `status=DEAD_LETTER`.
+
+5. Operations recovery:
+Team inspects DLQ with `GET /api/v1/jobs/dlq` and requeues dead-lettered jobs with `POST /api/v1/jobs/{jobId}/dlq/requeue`.
+
+### How Concurrency Is Maintained
+
+Example: Worker A and Worker B poll at the same time.
+
+1. Both call `/lease` concurrently.
+2. SQL locking (`FOR UPDATE SKIP LOCKED`) ensures only one worker locks the same row.
+3. Suppose Worker A gets the job; Worker B skips that locked row and gets another job (or no job).
+4. If Worker A crashes and does not `ack` before `leasedUntil`, the job becomes leasable again after timeout.
+
 ## 2) What This Project Demonstrates
 
 This project demonstrates core distributed-systems/backend concepts:

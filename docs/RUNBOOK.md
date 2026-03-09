@@ -103,3 +103,20 @@ To simulate failure behavior, enqueue payload containing `"forceFail":true`.
 ```bash
 mvn test
 ```
+
+## 6) Concurrency demo (two workers leasing together)
+
+1. Enqueue one job in queue `concurrency-demo`.
+2. Open two terminals and run lease call at nearly same time:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/jobs/lease \
+  -H "Content-Type: application/json" \
+  -d '{"queueName":"concurrency-demo","visibilityTimeoutSeconds":30}'
+```
+
+Expected behavior:
+
+- One terminal gets `leased=true` with job details.
+- Other terminal gets `leased=false` or a different job.
+- This demonstrates row-level lock behavior with `FOR UPDATE SKIP LOCKED`.
