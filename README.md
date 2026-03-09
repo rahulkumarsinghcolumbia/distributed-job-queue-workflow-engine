@@ -142,7 +142,3 @@ Arguments:
 
 - Concepts and implementation mapping: `docs/CONCEPTS_AND_SKILLS.md`
 - Runbook with step-by-step workflows: `docs/RUNBOOK.md`
-
-## 12) Resume/Interview One-Liner
-
-"Built a distributed job queue and workflow engine in Java/Spring Boot with worker leasing, visibility timeout, idempotent enqueue, retry/DLQ lifecycle, and operational recovery APIs for safe concurrent async processing."
