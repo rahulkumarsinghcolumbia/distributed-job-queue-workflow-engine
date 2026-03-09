@@ -46,7 +46,3 @@ Provide a reliable asynchronous processing backend where multiple workers can pr
 - Failure handling and recovery design
 - Integration testing strategy
 - DevOps readiness (Docker, profile-based config, docs)
-
-## Suggested Interview Pitch (30 seconds)
-
-"I built a distributed job queue engine in Spring Boot where workers lease jobs with visibility timeouts, so crashed workers do not block progress. I used transactional leasing with `FOR UPDATE SKIP LOCKED` for safe parallel polling, added idempotency keys to avoid duplicate job creation, and implemented complete lifecycle APIs including retry, dead-letter queue inspection, and requeue for operational recovery."
